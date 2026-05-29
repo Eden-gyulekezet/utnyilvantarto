@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<!-- saved from url=(0047)file:///Users/szomormate/Downloads/index_1.html -->
+<html lang="hu"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Útnyilvántartó</title>
+<link href="./Útnyilvántartó_files/css2" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F3EE; --card: #FFFFFF; --accent: #1A1A2E; --accent2: #E8452C;
+    --muted: #888880; --border: #E2DFD8; --success: #2D7A4F; --success-bg: #EAF5EE;
+    --radius: 16px; --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: var(--font); background: var(--bg); color: var(--accent); min-height: 100vh; max-width: 480px; margin: 0 auto; }
+  header { background: var(--accent); color: white; padding: 52px 20px 16px; }
+  header h1 { font-size: 12px; font-family: var(--mono); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; margin-bottom: 4px; }
+  header .car-name { font-size: 22px; font-weight: 600; }
+  .tab-row { display: flex; background: var(--accent); padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .tab-btn { flex: 1; background: none; border: none; color: rgba(255,255,255,0.45); font-family: var(--font); font-size: 13px; font-weight: 500; padding: 12px 4px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab-btn.active { color: white; border-bottom-color: #E8452C; }
+  .tab-btn.hidden { display: none; }
+  .screen { display: none; padding: 20px; padding-bottom: 60px; }
+  .screen.active { display: block; }
+  .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; }
+  .card-label { font-size: 11px; font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .driver-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .driver-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 99px; padding: 8px 14px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .driver-chip:active { transform: scale(0.96); }
+  .driver-chip.selected { background: var(--accent); color: white; border-color: var(--accent); }
+  .add-driver-btn { background: none; border: 1px dashed var(--border); border-radius: 99px; padding: 8px 14px; font-size: 13px; color: var(--muted); cursor: pointer; font-family: var(--font); }
+  .new-driver-form { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .new-driver-form.open { display: block; }
+  .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .field-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .field-wrap label { font-size: 11px; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  input[type="text"], input[type="number"], input[type="password"], select { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; font-size: 15px; font-family: var(--font); color: var(--accent); width: 100%; outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  .photo-box { width: 100%; height: 170px; background: var(--bg); border: 1.5px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; overflow: hidden; }
+  .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-icon { width: 40px; height: 40px; background: var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .photo-hint { font-size: 13px; color: var(--muted); }
+  .km-row { display: none; margin-top: 12px; }
+  .km-row.visible { display: block; }
+  .meta-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-key { font-size: 13px; color: var(--muted); }
+  .meta-val { font-size: 14px; font-weight: 500; font-family: var(--mono); color: var(--accent); text-align: right; max-width: 60%; word-break: break-word; }
+  .gps-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ccc; margin-right: 6px; vertical-align: middle; }
+  .gps-dot.ok { background: var(--success); }
+  .gps-dot.err { background: var(--accent2); }
+  .save-btn { width: 100%; background: var(--accent); color: white; border: none; border-radius: var(--radius); padding: 16px; font-size: 16px; font-weight: 600; font-family: var(--font); cursor: pointer; margin-top: 4px; transition: opacity 0.15s; }
+  .save-btn:active { opacity: 0.85; }
+  .save-btn:disabled { opacity: 0.4; }
+  .small-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-family: var(--font); color: var(--accent); cursor: pointer; }
+  .log-entry { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 10px; }
+  .log-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .log-name { font-size: 16px; font-weight: 600; }
+  .log-badge { font-size: 11px; font-family: var(--mono); padding: 4px 9px; border-radius: 99px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
+  .log-badge.indulas { background: #FFF3F1; border-color: #FFCCC7; color: var(--accent2); }
+  .log-badge.erkezes { background: var(--success-bg); border-color: #B2DFC4; color: var(--success); }
+  .log-km { font-family: var(--mono); font-size: 20px; font-weight: 500; margin-bottom: 6px; }
+  .log-meta { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  /* Admin */
+  .admin-trigger { text-align: center; margin-top: 24px; }
+  .admin-trigger button { background: none; border: none; font-size: 12px; color: var(--border); cursor: pointer; font-family: var(--mono); letter-spacing: 0.08em; }
+  .driver-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .driver-row:last-child { border-bottom: none; }
+  .driver-info { flex: 1; }
+  .driver-info .dname { font-size: 15px; font-weight: 600; }
+  .driver-info .ddate { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .status-badge { font-size: 11px; font-family: var(--mono); padding: 4px 9px; border-radius: 99px; margin-right: 8px; }
+  .status-badge.pending { background: #FFF8E1; border: 1px solid #FFE082; color: #B8860B; }
+  .status-badge.approved { background: var(--success-bg); border: 1px solid #B2DFC4; color: var(--success); }
+  .status-badge.rejected { background: #FFF3F1; border: 1px solid #FFCCC7; color: var(--accent2); }
+  .action-btns { display: flex; gap: 6px; }
+  .approve-btn { background: var(--success-bg); border: 1px solid #B2DFC4; color: var(--success); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-family: var(--font); cursor: pointer; font-weight: 500; }
+  .reject-btn { background: #FFF3F1; border: 1px solid #FFCCC7; color: var(--accent2); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-family: var(--font); cursor: pointer; font-weight: 500; }
+  .export-btn { width: 100%; background: var(--success-bg); color: var(--success); border: 1px solid #B2DFC4; border-radius: var(--radius); padding: 16px; font-size: 16px; font-weight: 600; font-family: var(--font); cursor: pointer; margin-top: 4px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--accent); color: white; padding: 12px 20px; border-radius: 99px; font-size: 14px; font-weight: 500; z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--accent2); }
+  /* Pending warning */
+  .pending-screen { padding: 40px 20px; text-align: center; }
+  .pending-icon { font-size: 48px; margin-bottom: 16px; }
+  .pending-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .pending-text { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Egyesületi autó</h1>
+  <div class="car-name">Útnyilvántartó</div>
+</header>
+
+<div class="tab-row">
+  <button class="tab-btn active" onclick="switchTab(&#39;rogzit&#39;)">Rögzítés</button>
+  <button class="tab-btn" onclick="switchTab(&#39;naplo&#39;)">Napló</button>
+  <button class="tab-btn" onclick="switchTab(&#39;export&#39;)">Export</button>
+  <button class="tab-btn hidden" id="admin-tab" onclick="switchTab(&#39;admin&#39;)">⚙ Admin</button>
+</div>
+
+<!-- RÖGZÍTÉS -->
+<div id="screen-rogzit" class="screen active">
+  <div id="driver-select-section">
+    <div class="card">
+      <div class="card-label">Sofőr kiválasztása</div>
+      <div class="driver-grid" id="driver-chips"></div>
+      <button class="add-driver-btn" onclick="toggleNewDriver()">+ Új sofőr vagyok</button>
+      <div class="new-driver-form" id="new-driver-form">
+        <div class="name-row">
+          <div class="field-wrap"><label>Vezetéknév</label><input type="text" id="last-name" placeholder="Kovács"></div>
+          <div class="field-wrap"><label>Keresztnév</label><input type="text" id="first-name" placeholder="Péter"></div>
+        </div>
+        <button class="small-btn" onclick="registerNewDriver()">Regisztráció</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pending-section" style="display:none;">
+    <div class="card pending-screen">
+      <div class="pending-icon">⏳</div>
+      <div class="pending-title">Jóváhagyás folyamatban</div>
+      <div class="pending-text">Az admin értesítést kapott, hamarosan jóváhagyja a hozzáférésed.<br><br>Addig is rögzítheted az adatokat, és azok mentésre kerülnek.</div>
+    </div>
+  </div>
+
+  <div id="rejected-section" style="display:none;">
+    <div class="card pending-screen">
+      <div class="pending-icon">🚫</div>
+      <div class="pending-title">Hozzáférés megtagadva</div>
+      <div class="pending-text">Az adminisztrátor nem engedélyezte a hozzáférésedet. Lépj kapcsolatba az egyesülettel.</div>
+    </div>
+  </div>
+
+  <div id="main-form" style="display:none;">
+    <div class="card">
+      <div class="card-label">Üdv, <span id="current-driver-name"></span>!</div>
+      <button class="add-driver-btn" onclick="switchDriver()">← Más sofőr</button>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Kilométeróra fotó</div>
+      <div class="photo-box" id="photo-box" onclick="document.getElementById(&#39;cam-input&#39;).click()">
+        <div class="photo-icon">📷</div>
+        <span class="photo-hint">Koppints a fotózáshoz</span>
+      </div>
+      <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+      <div class="km-row" id="km-row">
+        <div class="field-wrap" style="margin-top:4px;">
+          <label>Km-állás (add meg kézzel)</label>
+          <input type="number" id="km-input" placeholder="pl. 54320">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Út adatai</div>
+      <div class="meta-row">
+        <span class="meta-key">Típus</span>
+        <select id="trip-type" style="width:auto;padding:6px 32px 6px 10px;font-size:14px;">
+          <option value="Indulás">Indulás</option>
+          <option value="Érkezés">Érkezés</option>
+        </select>
+      </div>
+      <div class="meta-row"><span class="meta-key">Cél / megjegyzés</span></div>
+      <input type="text" id="destination" placeholder="pl. Budapest, Kossuth tér" style="margin-top:6px;">
+    </div>
+
+    <div class="card">
+      <div class="card-label">Automatikus adatok</div>
+      <div class="meta-row">
+        <span class="meta-key">Dátum és idő</span>
+        <span class="meta-val" id="datetime-display">2026. 05. 29. 22:20</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-key"><span class="gps-dot err" id="gps-dot"></span>GPS helyszín</span>
+        <span class="meta-val" id="gps-display">Nem elérhető</span>
+      </div>
+    </div>
+
+    <button class="save-btn" id="save-btn" onclick="saveEntry()">Bejegyzés mentése</button>
+  </div>
+
+  <div class="admin-trigger">
+    <button onclick="showAdminLogin()">· · ·</button>
+  </div>
+</div>
+
+<!-- NAPLÓ -->
+<div id="screen-naplo" class="screen">
+  <div id="log-container"></div>
+</div>
+
+<!-- EXPORT -->
+<div id="screen-export" class="screen">
+  <div class="card">
+    <div class="card-label">Összesítő</div>
+    <div class="meta-row"><span class="meta-key">Összes bejegyzés</span><span class="meta-val" id="stat-count">0</span></div>
+    <div class="meta-row"><span class="meta-key">Utolsó bejegyzés</span><span class="meta-val" id="stat-last">—</span></div>
+  </div>
+  <button class="export-btn" onclick="exportCSV()">⬇ CSV letöltése</button>
+</div>
+
+<!-- ADMIN -->
+<div id="screen-admin" class="screen">
+  <div id="admin-login-card" class="card">
+    <div class="card-label">Admin belépés</div>
+    <div class="field-wrap" style="margin-bottom:10px;">
+      <label>Jelszó</label>
+      <input type="password" id="admin-pw" placeholder="••••••••" onkeydown="if(event.key===&#39;Enter&#39;)checkAdminPw()">
+    </div>
+    <button class="save-btn" onclick="checkAdminPw()">Belépés</button>
+  </div>
+  <div id="admin-panel" style="display:none;">
+    <div class="card">
+      <div class="card-label">Sofőrök kezelése</div>
+      <div id="drivers-admin-list"><p style="color:var(--muted);font-size:14px;">Betöltés...</p></div>
+    </div>
+    <button class="save-btn" style="background:var(--accent2);margin-top:8px;" onclick="adminLogout()">Kilépés</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRMFDYvdnBamM-c2xiOHlxhnrbavAxEzSxyZaR2_UAy-rU2pEnsV5zaJgJBqnhj3p6/exec';
+const SECRET = 'ut_secret_2024_xK9m';
+const ADMIN_PW = 'Duo_96)90Wv';
+const STORE = 'ut_v3';
+
+let state = JSON.parse(localStorage.getItem(STORE) || '{"entries":[],"currentDriver":null,"driverStatus":null}');
+let gpsLat = null, gpsLon = null, gpsAddress = '';
+
+function save() { localStorage.setItem(STORE, JSON.stringify(state)); }
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+function switchTab(name) {
+  ['rogzit','naplo','export','admin'].forEach((n,i) => {
+    document.querySelectorAll('.tab-btn')[i] && (document.querySelectorAll('.tab-btn')[i].classList.toggle('active', n===name));
+    document.getElementById('screen-'+n) && document.getElementById('screen-'+n).classList.remove('active');
+  });
+  document.getElementById('screen-'+name) && document.getElementById('screen-'+name).classList.add('active');
+  if (name==='naplo') renderLog();
+  if (name==='export') renderExport();
+}
+
+function updateDateTime() {
+  const now = new Date();
+  const el = document.getElementById('datetime-display');
+  if (el) el.textContent = now.toLocaleDateString('hu-HU') + ' ' + now.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateDateTime, 1000);
+updateDateTime();
+
+navigator.geolocation && navigator.geolocation.getCurrentPosition(pos => {
+  gpsLat = pos.coords.latitude.toFixed(6);
+  gpsLon = pos.coords.longitude.toFixed(6);
+  const dot = document.getElementById('gps-dot');
+  if (dot) dot.className = 'gps-dot ok';
+  fetch('https://nominatim.openstreetmap.org/reverse?lat='+gpsLat+'&lon='+gpsLon+'&format=json&accept-language=hu')
+    .then(r=>r.json()).then(d => {
+      const a = d.address;
+      gpsAddress = [a.city||a.town||a.village||a.county, a.road].filter(Boolean).join(', ');
+      const el = document.getElementById('gps-display');
+      if (el) el.textContent = gpsAddress || gpsLat+', '+gpsLon;
+    }).catch(()=>{ gpsAddress = gpsLat+','+gpsLon; });
+}, () => {
+  const dot = document.getElementById('gps-dot');
+  if (dot) dot.className = 'gps-dot err';
+  const el = document.getElementById('gps-display');
+  if (el) el.textContent = 'Nem elérhető';
+});
+
+// --- DRIVER MANAGEMENT ---
+async function apiCall(data) {
+  data.secret = SECRET;
+  const resp = await fetch(SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+  return resp;
+}
+
+function initDriverSection() {
+  if (state.currentDriver && state.driverStatus) {
+    showDriverState(state.currentDriver, state.driverStatus);
+  } else {
+    loadApprovedDrivers();
+  }
+}
+
+async function loadApprovedDrivers() {
+  // Load from local + show chips
+  renderDriverChips([]);
+}
+
+function renderDriverChips(extra) {
+  const wrap = document.getElementById('driver-chips');
+  if (!wrap) return;
+  // We keep a local list of known drivers in state
+  const drivers = state.knownDrivers || [];
+  wrap.innerHTML = '';
+  drivers.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'driver-chip';
+    el.textContent = d.name;
+    el.onclick = () => selectExistingDriver(d.name, d.status);
+    wrap.appendChild(el);
+  });
+}
+
+function selectExistingDriver(name, status) {
+  state.currentDriver = name;
+  state.driverStatus = status;
+  save();
+  showDriverState(name, status);
+}
+
+function showDriverState(name, status) {
+  document.getElementById('driver-select-section').style.display = 'none';
+  document.getElementById('pending-section').style.display = 'none';
+  document.getElementById('rejected-section').style.display = 'none';
+  document.getElementById('main-form').style.display = 'none';
+
+  if (status === 'rejected') {
+    document.getElementById('rejected-section').style.display = 'block';
+  } else {
+    // pending or approved — both can use the app
+    if (status === 'pending') {
+      document.getElementById('pending-section').style.display = 'block';
+    }
+    document.getElementById('main-form').style.display = 'block';
+    document.getElementById('current-driver-name').textContent = name;
+  }
+}
+
+function toggleNewDriver() {
+  document.getElementById('new-driver-form').classList.toggle('open');
+}
+
+async function registerNewDriver() {
+  const l = document.getElementById('last-name').value.trim();
+  const f = document.getElementById('first-name').value.trim();
+  if (!l || !f) { toast('Add meg a teljes nevet!', true); return; }
+  const full = l + ' ' + f;
+
+  // Save locally
+  if (!state.knownDrivers) state.knownDrivers = [];
+  const existing = state.knownDrivers.find(d => d.name === full);
+  if (existing) {
+    selectExistingDriver(existing.name, existing.status);
+    return;
+  }
+
+  state.knownDrivers.push({name: full, status: 'pending'});
+  state.currentDriver = full;
+  state.driverStatus = 'pending';
+  save();
+
+  // Notify backend
+  try {
+    await apiCall({action: 'register_driver', name: full});
+  } catch(e) {}
+
+  toast('Regisztráció elküldve, az admin értesítést kap!');
+  showDriverState(full, 'pending');
+}
+
+function switchDriver() {
+  state.currentDriver = null;
+  state.driverStatus = null;
+  save();
+  document.getElementById('driver-select-section').style.display = 'block';
+  document.getElementById('pending-section').style.display = 'none';
+  document.getElementById('rejected-section').style.display = 'none';
+  document.getElementById('main-form').style.display = 'none';
+  renderDriverChips([]);
+}
+
+// --- PHOTO & ENTRY ---
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const box = document.getElementById('photo-box');
+    const img = document.createElement('img');
+    img.src = ev.target.result;
+    img.alt = 'Kilométeróra';
+    box.innerHTML = '';
+    box.appendChild(img);
+    document.getElementById('km-row').classList.add('visible');
+    document.getElementById('km-input').focus();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveEntry() {
+  const km = document.getElementById('km-input').value.trim();
+  if (!km) { toast('Add meg a km-állást!', true); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Mentés...';
+
+  const now = new Date();
+  const entry = {
+    datum: now.toLocaleDateString('hu-HU'),
+    ido: now.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'}),
+    sofor: state.currentDriver,
+    km, lat: gpsLat||'', lon: gpsLon||'',
+    helyszin: gpsAddress||(gpsLat?gpsLat+','+gpsLon:'ismeretlen'),
+    tipus: document.getElementById('trip-type').value,
+    cel: document.getElementById('destination').value.trim()
+  };
+
+  state.entries.push(entry);
+  save();
+
+  try {
+    await apiCall({action: 'log_entry', ...entry});
+    toast('Mentve ✓');
+  } catch(e) {
+    toast('Helyi mentés OK');
+  }
+
+  document.getElementById('km-input').value = '';
+  document.getElementById('destination').value = '';
+  document.getElementById('km-row').classList.remove('visible');
+  document.getElementById('photo-box').innerHTML = '<div class="photo-icon">📷</div><span class="photo-hint">Koppints a fotózáshoz</span>';
+  document.getElementById('cam-input').value = '';
+  btn.disabled = false;
+  btn.textContent = 'Bejegyzés mentése';
+}
+
+// --- LOG ---
+function renderLog() {
+  const c = document.getElementById('log-container');
+  if (!state.entries.length) {
+    c.innerHTML = '<div class="empty-state"><div class="empty-icon">🗒</div><div style="font-size:15px;color:var(--muted)">Még nincs bejegyzés.</div></div>';
+    return;
+  }
+  c.innerHTML = [...state.entries].reverse().map(e => `
+    <div class="log-entry">
+      <div class="log-top">
+        <span class="log-name">${e.sofor}</span>
+        <span class="log-badge ${e.tipus==='Indulás'?'indulas':'erkezes'}">${e.tipus}</span>
+      </div>
+      <div class="log-km">${Number(e.km).toLocaleString('hu-HU')} km</div>
+      <div class="log-meta">${e.datum} · ${e.ido}<br>📍 ${e.helyszin}${e.cel?' → '+e.cel:''}</div>
+    </div>`).join('');
+}
+
+function renderExport() {
+  document.getElementById('stat-count').textContent = state.entries.length;
+  if (state.entries.length) document.getElementById('stat-last').textContent = state.entries[state.entries.length-1].datum;
+}
+
+function exportCSV() {
+  if (!state.entries.length) { toast('Nincs exportálható adat!', true); return; }
+  const header = 'Dátum,Idő,Sofőr,Km-állás,GPS szélesség,GPS hosszúság,Helyszín,Típus,Cél\n';
+  const rows = state.entries.map(e => [e.datum,e.ido,e.sofor,e.km,e.lat,e.lon,'"'+e.helyszin+'"',e.tipus,'"'+(e.cel||'')+'"'].join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='utnyilvantarto.csv'; a.click();
+  toast('CSV letöltve ✓');
+}
+
+// --- ADMIN ---
+function showAdminLogin() {
+  switchTab('admin');
+  document.getElementById('admin-tab').classList.remove('hidden');
+}
+
+function checkAdminPw() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PW) {
+    document.getElementById('admin-login-card').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadAdminDrivers();
+  } else {
+    toast('Hibás jelszó!', true);
+    document.getElementById('admin-pw').value = '';
+  }
+}
+
+async function loadAdminDrivers() {
+  const list = document.getElementById('drivers-admin-list');
+  list.innerHTML = '<p style="color:var(--muted);font-size:14px;">Betöltés...</p>';
+  
+  // Show local known drivers since no-cors doesn't return data
+  const drivers = state.knownDrivers || [];
+  if (!drivers.length) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:14px;">Még nincs regisztrált sofőr.</p>';
+    return;
+  }
+  list.innerHTML = drivers.map(d => `
+    <div class="driver-row">
+      <div class="driver-info">
+        <div class="dname">${d.name}</div>
+        <div class="ddate">${d.status}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="status-badge ${d.status}">${d.status==='pending'?'Függőben':d.status==='approved'?'Jóváhagyva':'Elutasítva'}</span>
+        ${d.status!=='approved'?`<button class="approve-btn" onclick="updateDriver('${d.name}','approved')">✓</button>`:''}
+        ${d.status!=='rejected'?`<button class="reject-btn" onclick="updateDriver('${d.name}','rejected')">✗</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+async function updateDriver(name, status) {
+  // Update locally
+  if (!state.knownDrivers) state.knownDrivers = [];
+  const d = state.knownDrivers.find(x => x.name === name);
+  if (d) d.status = status;
+  // If this is the current driver, update their status too
+  if (state.currentDriver === name) state.driverStatus = status;
+  save();
+
+  try {
+    await apiCall({action: 'update_driver', name, status});
+  } catch(e) {}
+
+  toast(name + ' → ' + (status==='approved'?'Jóváhagyva':'Elutasítva'));
+  loadAdminDrivers();
+}
+
+function adminLogout() {
+  document.getElementById('admin-login-card').style.display = 'block';
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('admin-pw').value = '';
+  document.getElementById('admin-tab').classList.add('hidden');
+  switchTab('rogzit');
+}
+
+// INIT
+initDriverSection();
+</script>
+
+
+</body></html>
