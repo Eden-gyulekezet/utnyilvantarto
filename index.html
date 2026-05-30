@@ -430,6 +430,8 @@ async function loadDrivers() {
   }
   document.getElementById('driver-chips-loading').style.display = 'none';
   document.getElementById('driver-chips').style.display = 'flex';
+  const sublabel = document.querySelector('#driver-select-section .card-sublabel');
+  if(sublabel) sublabel.style.display = 'none';
 }
 
 function renderDriverChips(names) {
