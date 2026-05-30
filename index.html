@@ -102,6 +102,27 @@
   .divider hr { flex: 1; border: none; border-top: 1px solid var(--border); margin: 0; }
   select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
   .loading-overlay { text-align:center; padding: 32px 20px; color: var(--muted); font-size: 14px; }
+  .log-del-btn { background: #FFF3F1; border: 1px solid #FFCCC7; color: var(--accent2); border-radius: 8px; padding: 4px 10px; font-size: 13px; font-family: var(--font); cursor: pointer; line-height: 1; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(26,26,46,0.55); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .modal-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; width: 100%; max-width: 380px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .modal-summary { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+  .modal-summary .meta-row { padding: 6px 0; }
+  .modal-btns { display: flex; gap: 8px; }
+  .modal-btns button { flex: 1; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 600; font-family: var(--font); cursor: pointer; border: 1px solid var(--border); }
+  .modal-cancel { background: var(--bg); color: var(--accent); }
+  .modal-confirm { background: var(--accent); color: white; border-color: var(--accent); }
+  .modal-confirm.danger { background: var(--accent2); border-color: var(--accent2); }
+  .success-overlay { position: fixed; inset: 0; background: rgba(26,26,46,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1001; }
+  .success-overlay.show { display: flex; }
+  .success-tile { background: var(--success-bg); border: 1px solid #B2DFC4; border-radius: 20px; padding: 32px 28px; text-align: center; max-width: 340px; cursor: pointer; animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-tile .big { font-size: 40px; margin-bottom: 8px; }
+  .success-tile .msg { font-size: 22px; font-weight: 600; color: var(--success); margin-bottom: 12px; }
+  .success-tile .hint { font-size: 13px; color: var(--success); opacity: 0.85; line-height: 1.5; }
+  .success-tile .tap { font-size: 11px; color: var(--success); opacity: 0.6; margin-top: 14px; font-family: var(--mono); }
 </style>
 </head>
 <body>
@@ -244,6 +265,41 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Mentés megerősítő panel -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-card">
+    <div class="modal-title">Ellenőrizd az adatokat</div>
+    <div class="modal-sub">Kérlek nézd át a megadott adatokat mentés előtt.</div>
+    <div class="modal-summary" id="confirm-summary"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeConfirm()">Vissza</button>
+      <button class="modal-confirm" onclick="confirmSave()">Mentés megerősítése</button>
+    </div>
+  </div>
+</div>
+
+<!-- Törlés megerősítő panel -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-card">
+    <div class="modal-title" id="delete-title">Biztosan törlöd?</div>
+    <div class="modal-sub" id="delete-sub"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeDelete()">Mégsem</button>
+      <button class="modal-confirm danger" onclick="confirmDelete()">Törlés</button>
+    </div>
+  </div>
+</div>
+
+<!-- Jó utat felület -->
+<div class="success-overlay" id="success-overlay" onclick="hideSuccess()">
+  <div class="success-tile">
+    <div class="big">🚗</div>
+    <div class="msg">Jó utat, Bro 🙌</div>
+    <div class="hint">Ha esetleg hibás az előző bejegyzésed, ne javítsd — csak hozz létre egy következőt a helyes adatokkal.</div>
+    <div class="tap">Koppints a bezáráshoz</div>
+  </div>
+</div>
+
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRMFDYvdnBamM-c2xiOHlxhnrbavAxEzSxyZaR2_UAy-rU2pEnsV5zaJgJBqnhj3p6/exec';
 const SECRET = 'ut_secret_2024_xK9m';
@@ -253,6 +309,8 @@ const STORE = 'ut_v6';
 let state = JSON.parse(localStorage.getItem(STORE) || '{"currentDriver":null,"driverStatus":null}');
 let allEntries = [];
 let gpsLat = null, gpsLon = null, gpsAddress = '';
+let adminUnlocked = false;
+let pendingDelete = null;
 
 function save() { localStorage.setItem(STORE, JSON.stringify(state)); }
 
@@ -420,33 +478,67 @@ function handlePhoto(e) {
   reader.readAsDataURL(file);
 }
 
-async function saveEntry() {
-  const km = document.getElementById('km-input').value.trim();
-  if(!km) { toast('Add meg a km-állást!', true); return; }
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.textContent = 'Mentés...';
+function buildEntry() {
   const now = new Date();
   const y = now.getFullYear();
   const mo = String(now.getMonth()+1).padStart(2,'0');
   const d = String(now.getDate()).padStart(2,'0');
   const h = String(now.getHours()).padStart(2,'0');
   const mi = String(now.getMinutes()).padStart(2,'0');
-  const entry = {
+  return {
     datum: y+'.'+mo+'.'+d+'.',
     ido: h+':'+mi,
-    sofor: state.currentDriver, km,
+    sofor: state.currentDriver,
+    km: document.getElementById('km-input').value.trim(),
     lat: gpsLat||'', lon: gpsLon||'',
     helyszin: gpsAddress||(gpsLat?gpsLat+','+gpsLon:'ismeretlen'),
     tipus: document.getElementById('trip-type').value,
     cel: document.getElementById('destination').value.trim()
   };
-  try { await apiPost({action:'log_entry', ...entry}); toast('Mentve ✓'); }
-  catch(e) { toast('Mentési hiba!', true); }
+}
+
+function saveEntry() {
+  const km = document.getElementById('km-input').value.trim();
+  if(!km) { toast('Add meg a km-állást!', true); return; }
+  const e = buildEntry();
+  document.getElementById('confirm-summary').innerHTML = `
+    <div class="meta-row"><span class="meta-key">Sofőr</span><span class="meta-val">${e.sofor||'—'}</span></div>
+    <div class="meta-row"><span class="meta-key">Km-állás</span><span class="meta-val">${Number(e.km).toLocaleString('hu-HU')} km</span></div>
+    <div class="meta-row"><span class="meta-key">Típus</span><span class="meta-val">${e.tipus}</span></div>
+    <div class="meta-row"><span class="meta-key">Helyszín</span><span class="meta-val">${e.helyszin}</span></div>
+    <div class="meta-row"><span class="meta-key">Cél</span><span class="meta-val">${e.cel||'—'}</span></div>
+    <div class="meta-row"><span class="meta-key">Dátum / idő</span><span class="meta-val">${e.datum} ${e.ido}</span></div>`;
+  document.getElementById('confirm-modal').classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('show');
+}
+
+async function confirmSave() {
+  closeConfirm();
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Mentés...';
+  const entry = buildEntry();
+  try { await apiPost({action:'log_entry', ...entry}); }
+  catch(e) { toast('Mentési hiba!', true); btn.disabled=false; btn.textContent='Bejegyzés mentése'; return; }
   document.getElementById('km-input').value = '';
   document.getElementById('destination').value = '';
   document.getElementById('photo-box').innerHTML = '<div class="photo-icon">📷</div><span class="photo-hint">Fotózd be a kilométerórát</span>';
   document.getElementById('cam-input').value = '';
   btn.disabled = false; btn.textContent = 'Bejegyzés mentése';
+  showSuccess();
+}
+
+let successTimer = null;
+function showSuccess() {
+  document.getElementById('success-overlay').classList.add('show');
+  clearTimeout(successTimer);
+  successTimer = setTimeout(hideSuccess, 4000);
+}
+function hideSuccess() {
+  clearTimeout(successTimer);
+  document.getElementById('success-overlay').classList.remove('show');
 }
 
 async function loadAndRenderLog() {
@@ -463,7 +555,10 @@ async function loadAndRenderLog() {
       <div class="log-entry">
         <div class="log-top">
           <span class="log-name">${e[2]}</span>
-          <span class="log-badge ${e[7]==='Indulás'?'indulas':'erkezes'}">${e[7]}</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="log-badge ${e[7]==='Indulás'?'indulas':'erkezes'}">${e[7]}</span>
+            ${adminUnlocked?`<button class="log-del-btn" onclick="askDeleteEntry('${(e[0]+'').replace(/'/g,"\\'")}','${(e[1]+'').replace(/'/g,"\\'")}','${(e[2]+'').replace(/'/g,"\\'")}')">✕</button>`:''}
+          </div>
         </div>
         <div class="log-km">${Number(e[3]).toLocaleString('hu-HU')} km</div>
         <div class="log-meta">
@@ -474,6 +569,43 @@ async function loadAndRenderLog() {
   } catch(err) {
     c.innerHTML = '<div class="loading-overlay">Nem sikerült betölteni.</div>';
   }
+}
+
+function askDeleteEntry(datum, ido, sofor) {
+  pendingDelete = { kind: 'entry', datum, ido, sofor };
+  document.getElementById('delete-title').textContent = 'Bejegyzés törlése';
+  document.getElementById('delete-sub').textContent = `Biztosan törlöd? ${sofor} – ${formatDT(datum, ido)}. Ez a Google Sheetből is törlődik, nem visszavonható.`;
+  document.getElementById('delete-modal').classList.add('show');
+}
+
+function askDeleteDriver(name) {
+  pendingDelete = { kind: 'driver', name };
+  document.getElementById('delete-title').textContent = 'Sofőr törlése';
+  document.getElementById('delete-sub').textContent = `Biztosan törlöd "${name}" sofőrt? A sor a Google Sheetből is törlődik, nem visszavonható.`;
+  document.getElementById('delete-modal').classList.add('show');
+}
+
+function closeDelete() {
+  document.getElementById('delete-modal').classList.remove('show');
+  pendingDelete = null;
+}
+
+async function confirmDelete() {
+  if(!pendingDelete) { closeDelete(); return; }
+  const job = pendingDelete;
+  document.getElementById('delete-modal').classList.remove('show');
+  pendingDelete = null;
+  try {
+    if(job.kind === 'entry') {
+      await apiPost({action:'delete_entry', datum:job.datum, ido:job.ido, sofor:job.sofor});
+      toast('Bejegyzés törölve ✓');
+      loadAndRenderLog();
+    } else {
+      await apiPost({action:'delete_driver', name:job.name});
+      toast(job.name + ' törölve ✓');
+      loadAdminDrivers();
+    }
+  } catch(e) { toast('Törlési hiba!', true); }
 }
 
 async function loadExportStats() {
@@ -514,6 +646,7 @@ function showAdminLogin() {
 
 function checkAdminPw() {
   if(document.getElementById('admin-pw').value === ADMIN_PW) {
+    adminUnlocked = true;
     document.getElementById('admin-login-card').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
     loadAdminDrivers();
@@ -538,8 +671,8 @@ async function loadAdminDrivers() {
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span class="status-badge ${d[1]}">${d[1]==='pending'?'Függőben':d[1]==='approved'?'OK':'Tiltva'}</span>
-          ${d[1]!=='approved'?`<button class="approve-btn" onclick="updateDriver('${d[0]}','approved')">✓</button>`:''}
-          ${d[1]!=='rejected'?`<button class="reject-btn" onclick="updateDriver('${d[0]}','rejected')">✗</button>`:''}
+          ${d[1]!=='approved'?`<button class="approve-btn" onclick="updateDriver('${(d[0]+'').replace(/'/g,"\\'")}','approved')">✓</button>`:''}
+          <button class="reject-btn" onclick="askDeleteDriver('${(d[0]+'').replace(/'/g,"\\'")}')">✗</button>
         </div>
       </div>`).join('');
   } catch(e) {
@@ -556,6 +689,7 @@ async function updateDriver(name, status) {
 }
 
 function adminLogout() {
+  adminUnlocked = false;
   document.getElementById('admin-login-card').style.display = 'block';
   document.getElementById('admin-panel').style.display = 'none';
   document.getElementById('admin-pw').value = '';
