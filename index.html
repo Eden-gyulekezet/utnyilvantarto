@@ -162,7 +162,7 @@
     <div class="card pending-screen">
       <div class="pending-icon">⏳</div>
       <div class="pending-title">Jóváhagyás folyamatban</div>
-      <div class="pending-text">Az admin értesítést kapott. Addig is rögzítheted az adatokat.</div>
+      <div class="pending-text">Az admin értesítést kapott. Addig is rögzítheted az adatokat és elmentheted a bejegyzést.</div>
     </div>
   </div>
 
@@ -293,9 +293,8 @@
 <!-- Jó utat felület -->
 <div class="success-overlay" id="success-overlay" onclick="hideSuccess()">
   <div class="success-tile">
-    <div class="big">🚗</div>
     <div class="msg">Jó utat, Bro 🙌</div>
-    <div class="hint">Ha esetleg hibás az előző bejegyzésed, ne javítsd — csak hozz létre egy következőt a helyes adatokkal.</div>
+    <div class="hint">Ha esetleg hibás a megadott adatok, ne javítsd — csak hozz létre egy következő bejegyzést a helyes adatokkal.</div>
     <div class="tap">Koppints a bezáráshoz</div>
   </div>
 </div>
@@ -530,14 +529,10 @@ async function confirmSave() {
   showSuccess();
 }
 
-let successTimer = null;
 function showSuccess() {
   document.getElementById('success-overlay').classList.add('show');
-  clearTimeout(successTimer);
-  successTimer = setTimeout(hideSuccess, 4000);
 }
 function hideSuccess() {
-  clearTimeout(successTimer);
   document.getElementById('success-overlay').classList.remove('show');
 }
 
