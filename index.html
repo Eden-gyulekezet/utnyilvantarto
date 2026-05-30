@@ -719,6 +719,11 @@ async function loadAdminDrivers() {
         document.getElementById('main-form').style.display = 'none';
         document.getElementById('pending-section').style.display = 'none';
         document.getElementById('rejected-section').style.display = 'none';
+        // Chipek frissítése az érvényes sofőrökkel
+        const approvedNames = drivers.filter(d => d[1] === 'approved').map(d => d[0]);
+        renderDriverChips(approvedNames);
+        document.getElementById('driver-chips-loading').style.display = 'none';
+        document.getElementById('driver-chips').style.display = 'flex';
       }
     }
   } catch(e) {
@@ -742,6 +747,8 @@ function adminLogout() {
   document.getElementById('admin-tab').classList.add('hidden');
   document.getElementById('export-tab').classList.add('hidden');
   switchTab('rogzit');
+  // Chipek frissítése – lehet hogy közben jóváhagytak/töröltek sofőrt
+  if(!state.currentDriver) loadDrivers();
 }
 
 // INIT
