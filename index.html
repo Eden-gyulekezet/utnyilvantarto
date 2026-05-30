@@ -686,18 +686,41 @@ async function loadAdminDrivers() {
     const data = await apiGet({action:'get_drivers'});
     const drivers = data.slice(1).filter(r => r[0]);
     if(!drivers.length) { list.innerHTML = '<p style="color:var(--muted);font-size:14px;">Még nincs regisztrált sofőr.</p>'; return; }
-    list.innerHTML = drivers.map(d => `
-      <div class="driver-row">
+    list.innerHTML = drivers.map((d, i) => `
+      <div class="driver-row" data-driver-idx="${i}">
         <div class="driver-info">
           <div class="dname">${d[0]}</div>
           <div class="ddate">${d[2]||''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span class="status-badge ${d[1]}">${d[1]==='pending'?'Függőben':d[1]==='approved'?'OK':'Tiltva'}</span>
-          ${d[1]!=='approved'?`<button class="approve-btn" onclick="updateDriver('${(d[0]+'').replace(/'/g,"\\'")}','approved')">✓</button>`:''}
-          <button class="reject-btn" onclick="askDeleteDriver('${(d[0]+'').replace(/'/g,"\\'")}')">✗</button>
+          ${d[1]!=='approved'?`<button class="approve-btn" data-action="approve" data-idx="${i}">✓</button>`:''}
+          <button class="reject-btn" data-action="delete" data-idx="${i}">✗</button>
         </div>
       </div>`).join('');
+
+    // Event delegation – nincs inline string probléma
+    list._drivers = drivers;
+    list.onclick = function(ev) {
+      const btn = ev.target.closest('button[data-action]');
+      if(!btn) return;
+      const idx = parseInt(btn.dataset.idx, 10);
+      const name = list._drivers[idx][0];
+      if(btn.dataset.action === 'approve') updateDriver(name, 'approved');
+      else if(btn.dataset.action === 'delete') askDeleteDriver(name);
+    };
+
+    // Ha a rögzítés fülön tárolt sofőr törlésre/tiltásra került, nullázzuk az állapotot
+    if(state.currentDriver) {
+      const stored = drivers.find(d => d[0] === state.currentDriver);
+      if(!stored || stored[1] !== 'approved') {
+        state.currentDriver = null; state.driverStatus = null; save();
+        document.getElementById('driver-select-section').style.display = 'block';
+        document.getElementById('main-form').style.display = 'none';
+        document.getElementById('pending-section').style.display = 'none';
+        document.getElementById('rejected-section').style.display = 'none';
+      }
+    }
   } catch(e) {
     list.innerHTML = '<p style="color:var(--muted);font-size:14px;">Betöltési hiba.</p>';
   }
